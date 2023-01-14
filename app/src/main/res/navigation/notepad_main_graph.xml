@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/notepad_main_graph"
+    app:startDestination="@id/mainScreenFragment">
+
+    <fragment
+        android:id="@+id/mainScreenFragment"
+        android:name="com.example.notepad.ui.mainScreen.MainScreenFragment"
+        android:label="fragment_main_screen"
+        tools:layout="@layout/fragment_main_screen" >
+        <action
+            android:id="@+id/action_mainScreenFragment_to_createNoteFragment"
+            app:destination="@id/createNoteFragment"
+            app:popUpTo="@id/mainScreenFragment"/>
+        <action
+            android:id="@+id/action_mainScreenFragment_to_passwordFragment"
+            app:destination="@id/passwordFragment"
+            app:popUpTo="@id/mainScreenFragment" />
+        <action
+            android:id="@+id/action_mainScreenFragment_to_folderListFragment"
+            app:destination="@id/folderListFragment"
+            app:popUpTo="@id/mainScreenFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/groupScreenFragment"
+        android:name="com.example.notepad.ui.GroupScreenFragment"
+        android:label="fragment_group_screen"
+        tools:layout="@layout/fragment_group_screen" >
+        <action
+            android:id="@+id/action_groupScreenFragment_to_createNoteFragment"
+            app:destination="@id/createNoteFragment"
+            app:popUpTo="@id/groupScreenFragment" />
+        <action
+            android:id="@+id/action_groupScreenFragment_to_passwordFragment"
+            app:destination="@id/passwordFragment"
+            app:popUpTo="@id/groupScreenFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/createNoteFragment"
+        android:name="com.example.notepad.ui.createNote.CreateNoteFragment"
+        android:label="fragment_create_note"
+        tools:layout="@layout/fragment_create_note">
+        <deepLink
+            android:autoVerify="true"
+            app:uri="app://createNote" />
+        <argument
+            android:name="noteUid"
+            app:argType="string" />
+        <action
+            android:id="@+id/action_createNoteFragment_to_colorPickerDialog"
+            app:destination="@id/colorPickerDialog"
+            app:popUpTo="@id/createNoteFragment" />
+        <action
+            android:id="@+id/action_createNoteFragment_to_passwordFragment"
+            app:destination="@id/passwordFragment" />
+        <action
+            android:id="@+id/action_createNoteFragment_to_folderChooseFragment"
+            app:destination="@id/folderChooseFragment"
+            app:popUpTo="@id/createNoteFragment" />
+    </fragment>
+    <dialog
+        android:id="@+id/colorPickerDialog"
+        android:name="com.example.notepad.ui.colorPicker.ColorPickerDialog"
+        android:label="fragment_color_picker_dialog"
+        tools:layout="@layout/fragment_color_picker_dialog">
+        <argument
+            android:name="colorID"
+            app:argType="integer" />
+    </dialog>
+    <fragment
+        android:id="@+id/passwordFragment"
+        android:name="com.example.notepad.ui.password.PasswordFragment"
+        android:label="PasswordFragment"
+        tools:layout="@layout/password_layout">
+        <action
+            android:id="@+id/action_passwordFragment_to_createNoteFragment"
+            app:destination="@id/createNoteFragment"
+            app:popUpTo="@id/mainScreenFragment" />
+    </fragment>
+    <dialog
+        android:id="@+id/folderListFragment"
+        android:name="com.example.notepad.ui.folderList.FolderListFragment"
+        android:label="FolderListFragment"
+        tools:layout="@layout/folder_list_layout">
+        <action
+            android:id="@+id/action_folderListFragment_to_createFolderName"
+            app:destination="@id/createFolderName"
+            app:popUpTo="@id/folderListFragment" />
+    </dialog>
+    <dialog
+        android:id="@+id/createFolderName"
+        android:name="com.example.notepad.ui.createFolder.CreateFolderName"
+        android:label="CreateFolderName"
+        tools:layout="@layout/folder_create_layout"/>
+    <dialog
+        android:id="@+id/folderChooseFragment"
+        android:name="com.example.notepad.ui.folderChoose.FolderChooseFragment"
+        android:label="FolderChooseFragment"
+        tools:layout="@layout/folder_choose"/>
+</navigation>
