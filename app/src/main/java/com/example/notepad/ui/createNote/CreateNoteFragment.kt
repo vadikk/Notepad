@@ -49,17 +49,25 @@ class CreateNoteFragment : Fragment() {
         binding?.toolbar?.inflateMenu(R.menu.note_menu)
         showKeyBoard(context, binding?.description)
 
-        viewLifecycleOwner.collectWithLifecycleState(createNoteVM.createNoteState) { note ->
+        viewLifecycleOwner.collectWithLifecycleState(createNoteVM.viewState) { note ->
             showUI(note)
         }
 
+        viewLifecycleOwner.collectWithLifecycleState(createNoteVM.effect) {
+            when (it) {
+                is NoteEffect.CloseScreen -> {
+                    findNavController().navigateUp()
+                }
+            }
+        }
+
         binding?.titleText?.addTextChangedListener(
-            TextChangeWatcher { createNoteVM.changeTitle(it.toString()) }
+            TextChangeWatcher { createNoteVM.setEvent(NoteEvent.ChangeTitle(it.toString())) }
         )
         binding?.description?.addTextChangedListener(
-            TextChangeWatcher { createNoteVM.changeDescription(it.toString()) }
+            TextChangeWatcher { createNoteVM.setEvent(NoteEvent.ChangeDescription(it.toString())) }
         )
-        binding?.applyImage?.setOnClickListener { createNoteVM.saveNote { findNavController().navigateUp() } }
+        binding?.applyImage?.setOnClickListener { createNoteVM.setEvent(NoteEvent.Save) }
     }
 
     override fun onDestroyView() {
@@ -98,11 +106,11 @@ class CreateNoteFragment : Fragment() {
                     true
                 }
                 R.id.delete -> {
-                    createNoteVM.deleteNote { findNavController().navigateUp() }
+                    createNoteVM.setEvent(NoteEvent.Delete)
                     true
                 }
                 R.id.bg -> {
-                    showColorPickerScreen(createNoteVM.createNoteState.value.color)
+                    showColorPickerScreen(createNoteVM.currentState.color)
                     true
                 }
                 R.id.password -> {
@@ -128,14 +136,7 @@ class CreateNoteFragment : Fragment() {
             viewLifecycleOwner
         ) { _, bundle ->
             val newColor = bundle.getInt(ColorPickerDialog.COLOR_ITEM)
-            createNoteVM.passNewColor(newColor)
-
-            binding?.parentContainer?.setBackgroundColor(
-                ContextCompat.getColor(
-                    requireContext(),
-                    newColor
-                )
-            )
+            createNoteVM.setEvent(NoteEvent.ChangeColor(newColor))
         }
 
         parentFragmentManager.setFragmentResultListener(
@@ -143,7 +144,7 @@ class CreateNoteFragment : Fragment() {
             viewLifecycleOwner
         ) { _, bundle ->
             val refreshPassword = bundle.getString(PasswordFragment.PASSWORD, "")
-            createNoteVM.refreshPasswordNote(refreshPassword)
+            createNoteVM.setEvent(NoteEvent.ChangePassword(refreshPassword))
         }
 
         parentFragmentManager.setFragmentResultListener(
@@ -151,7 +152,7 @@ class CreateNoteFragment : Fragment() {
             viewLifecycleOwner
         ) { _, bundle ->
             val folderUid = bundle.getString(FolderChooseFragment.FOLDER_UID, "")
-            createNoteVM.moveNoteToFolder(folderUid)
+            createNoteVM.setEvent(NoteEvent.Folder(folderUid))
         }
     }
 
@@ -161,8 +162,8 @@ class CreateNoteFragment : Fragment() {
     }
 
     private fun shareNote() {
-        val title = createNoteVM.createNoteState.value.title.trim()
-        val description = createNoteVM.createNoteState.value.description.trim()
+        val title = createNoteVM.currentState.title.trim()
+        val description = createNoteVM.currentState.description.trim()
         val finalText =
             if (title.isNotEmpty() && description.isNotEmpty()) title + "\n" + description
             else title + description

@@ -1,8 +1,8 @@
 package com.example.notepad.data.di
 
-import com.example.notepad.data.repository.FolderRepository
+import com.example.notepad.domain.repository.FolderRepository
 import com.example.notepad.data.repository.FolderRepositoryImpl
-import com.example.notepad.data.repository.NoteRepository
+import com.example.notepad.domain.repository.NoteRepository
 import com.example.notepad.data.repository.NoteRepositoryImpl
 import dagger.Binds
 import dagger.Module

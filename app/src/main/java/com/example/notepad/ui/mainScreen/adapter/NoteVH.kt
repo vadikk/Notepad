@@ -53,6 +53,8 @@ class NoteVH(val binding: ItemNoteVerticalBinding) : RecyclerView.ViewHolder(bin
         if (noteState == null) return
         showBlurDescription(noteState)
         with(binding) {
+            title.text = noteState.note.title
+            description.text = noteState.note.description
             timeText.text = showCurrentDate(noteState.note.date.toLong())
             lockImage.isInvisible = noteState.note.password.isEmpty() == true
             pinImage.isVisible = noteState.note.isPinned

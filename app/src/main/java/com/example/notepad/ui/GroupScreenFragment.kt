@@ -19,10 +19,7 @@ import com.example.notepad.data.utils.hideKeyBoard
 import com.example.notepad.databinding.FragmentGroupScreenBinding
 import com.example.notepad.databinding.FragmentMainScreenBinding
 import com.example.notepad.domain.usecase.PasswordType
-import com.example.notepad.ui.mainScreen.MainScreenFragmentDirections
-import com.example.notepad.ui.mainScreen.MainScreenVM
-import com.example.notepad.ui.mainScreen.NoteSelectState
-import com.example.notepad.ui.mainScreen.TypeScreen
+import com.example.notepad.ui.mainScreen.*
 import com.example.notepad.ui.mainScreen.adapter.NoteAdapter
 import com.example.notepad.ui.mainScreen.adapter.NoteItemDecoration
 import com.example.notepad.ui.password.PasswordFragment
@@ -61,7 +58,7 @@ class GroupScreenFragment : Fragment() {
         adapter = NoteAdapter(
             layoutManager,
             { openEditNote(it) },
-            { uid, isChecked -> mainScreenVM.selectNote(uid, isChecked) }
+            { uid, isChecked -> mainScreenVM.setEvent(MainScreenEvent.SelectNote(uid, isChecked)) }
         )
 
         binding?.noteRV?.also {
@@ -70,17 +67,18 @@ class GroupScreenFragment : Fragment() {
             it.addItemDecoration(NoteItemDecoration())
         }
 
-        viewLifecycleOwner.collectWithLifecycleState(mainScreenVM.notesState) {
-            adapter?.submitList(it)
+        viewLifecycleOwner.collectWithLifecycleState(mainScreenVM.viewState) {
+            binding?.folder?.text = it.folderName
+            adapter?.submitList(it.modifyNotes)
+            binding?.selectNumber?.text = "${it.selectNoteCount?.selectCount} selected"
+            binding?.selectAll?.isChecked = it.selectNoteCount?.isSelectAll ?: false
+            binding?.delete?.isEnabled = (it.selectNoteCount?.selectCount ?: 0) > 0
+            binding?.pin?.isEnabled = (it.selectNoteCount?.selectCount ?: 0) > 0
         }
-        viewLifecycleOwner.collectWithLifecycleState(mainScreenVM.selectCount) {
-            binding?.selectNumber?.text = "${it.selectCount} selected"
-            binding?.selectAll?.isChecked = it.isSelectAll
-            binding?.delete?.isEnabled = it.selectCount > 0
-            binding?.pin?.isEnabled = it.selectCount > 0
-        }
-        viewLifecycleOwner.collectWithLifecycleState(mainScreenVM.folderName) {
-            binding?.folder?.text = it
+        viewLifecycleOwner.collectWithLifecycleState(mainScreenVM.effect) {
+            when(it) {
+                is MainScreenEffect.CancelEdit -> cancelEdit()
+            }
         }
     }
 
@@ -111,7 +109,7 @@ class GroupScreenFragment : Fragment() {
         if (binding?.toolbar?.isVisible == true) {
             binding?.toolbar?.isInvisible = true
             binding?.editLayout?.isVisible = true
-            mainScreenVM.selectAll(NoteSelectState.NOT_SELECT)
+            mainScreenVM.setEvent(MainScreenEvent.SelectAll(NoteSelectState.NOT_SELECT))
             binding?.fab?.isInvisible = true
             adapter?.changeCanOpenDetailMode(false)
         }
@@ -142,7 +140,7 @@ class GroupScreenFragment : Fragment() {
         binding?.cancelEdit?.setOnClickListener { cancelEdit() }
         binding?.selectAll?.setOnClickListener {
             val selectState = if (binding?.selectAll?.isChecked == true) NoteSelectState.SELECT else NoteSelectState.NOT_SELECT
-            mainScreenVM.selectAll(selectState)
+            mainScreenVM.setEvent(MainScreenEvent.SelectAll(selectState))
         }
 
         val searchView = binding?.toolbar?.menu?.findItem(R.id.search)?.actionView as? SearchView
@@ -153,24 +151,24 @@ class GroupScreenFragment : Fragment() {
             }
 
             override fun onQueryTextChange(p0: String?): Boolean {
-                mainScreenVM.searchContent(p0.orEmpty())
+                mainScreenVM.setEvent(MainScreenEvent.SearchNote(p0.orEmpty()))
                 return true
             }
         })
         binding?.fab?.hide()
         binding?.fab?.postDelayed({ binding?.fab?.show() }, 250)
         binding?.fab?.setOnClickListener { openEditNote(null) }
-        binding?.delete?.setOnClickListener { mainScreenVM.deleteNotes{ cancelEdit() } }
-        binding?.pin?.setOnClickListener { mainScreenVM.pinNotes{ cancelEdit() } }
+        binding?.delete?.setOnClickListener { mainScreenVM.setEvent(MainScreenEvent.DeleteNotes) }
+        binding?.pin?.setOnClickListener { mainScreenVM.setEvent(MainScreenEvent.PinNotes) }
     }
 
     private fun cancelEdit() {
         if (binding?.editLayout?.isVisible == true) {
             binding?.toolbar?.isVisible = true
             binding?.editLayout?.isInvisible = true
-            mainScreenVM.selectAll(NoteSelectState.IDLE)
+            mainScreenVM.setEvent(MainScreenEvent.SelectAll(NoteSelectState.IDLE))
             binding?.fab?.isInvisible = false
-            mainScreenVM.clearSelectNotes()
+            mainScreenVM.setEvent(MainScreenEvent.ClearSelectNotes)
             adapter?.changeCanOpenDetailMode(true)
         }
     }

@@ -1,31 +1,21 @@
 package com.example.notepad.ui.folderList
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.notepad.data.di.IoDispatcher
 import com.example.notepad.data.model.Folder
 import com.example.notepad.data.model.Note
-import com.example.notepad.data.repository.FolderRepository
-import com.example.notepad.data.repository.NoteRepository
+import com.example.notepad.domain.repository.FolderRepository
+import com.example.notepad.domain.repository.NoteRepository
+import com.example.notepad.ui.presentation.BaseVM
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.async
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
 class FolderListVM @Inject constructor(
     private val folderRepository: FolderRepository,
     private val noteRepository: NoteRepository
-): ViewModel() {
-
-    private val _folderEntities = MutableStateFlow<List<FolderEntity>>(emptyList())
-    val folderEntities = _folderEntities.asStateFlow()
+) : BaseVM<FoldersState, FoldersEvent, FoldersEffect>() {
 
     private var folderList = emptyList<Folder>()
 
@@ -39,7 +29,15 @@ class FolderListVM @Inject constructor(
         }
     }
 
-    fun selectFolder(uid: Int?, result: () -> Unit) {
+    override fun createInitialState(): FoldersState = FoldersState()
+
+    override fun handleEvents(event: FoldersEvent) {
+        when (event) {
+            is FoldersEvent.SelectFolder -> selectFolder(event.uid)
+        }
+    }
+
+    private fun selectFolder(uid: Int?) {
         val newFolderList = folderList.map {
             if (it.uid == uid) it.copy(isSelected = true) else it.copy(isSelected = false)
         }
@@ -47,22 +45,24 @@ class FolderListVM @Inject constructor(
         viewModelScope.launch {
             folderRepository.insertAll(newFolderList)
         }
-        result()
+        setEffect { FoldersEffect.CloseScreen }
     }
 
-    private fun fillFolderList(folders: List<Folder>, notes:List<Note>) {
+    private fun fillFolderList(folders: List<Folder>, notes: List<Note>) {
         val isSelectAllNotes = folders.none { it.isSelected }
 
         val newFolders = mutableListOf<FolderEntity>().apply {
             add(FolderEntity.FolderIdle)
-            add(FolderEntity.FolderItem(
-                Folder(
-                    uid = -1,
-                    title = "All notes",
-                    isSelected = isSelectAllNotes,
-                    countNote = notes.size
+            add(
+                FolderEntity.FolderItem(
+                    Folder(
+                        uid = -1,
+                        title = "All notes",
+                        isSelected = isSelectAllNotes,
+                        countNote = notes.size
+                    )
                 )
-            ))
+            )
         }
         newFolders.addAll(
             folders.map { folder ->
@@ -73,11 +73,6 @@ class FolderListVM @Inject constructor(
                 )
             }
         )
-        _folderEntities.value = newFolders
+        setState { this.copy(folderEntities = newFolders) }
     }
-}
-
-sealed class FolderEntity {
-    class FolderItem(val folder: Folder) : FolderEntity()
-    object FolderIdle : FolderEntity()
 }

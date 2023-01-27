@@ -2,6 +2,7 @@ package com.example.notepad.data.repository
 
 import com.example.notepad.data.db.NoteDao
 import com.example.notepad.data.model.Note
+import com.example.notepad.domain.repository.NoteRepository
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 

@@ -49,8 +49,8 @@ class FolderChooseFragment : BottomSheetDialogFragment() {
             it.addItemDecoration(FolderItemDecoration())
         }
         binding?.cancelBtn?.setOnClickListener { findNavController().navigateUp() }
-        viewLifecycleOwner.collectWithLifecycleState(folderListVM.folderEntities) {
-            folderAdapter?.submitList(it)
+        viewLifecycleOwner.collectWithLifecycleState(folderListVM.viewState) {
+            folderAdapter?.submitList(it.folderEntities)
         }
     }
 

@@ -1,16 +1,14 @@
 package com.example.notepad.ui.folderChoose
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.notepad.data.model.Folder
 import com.example.notepad.data.model.Note
-import com.example.notepad.data.repository.FolderRepository
-import com.example.notepad.data.repository.NoteRepository
+import com.example.notepad.domain.repository.FolderRepository
+import com.example.notepad.domain.repository.NoteRepository
 import com.example.notepad.ui.folderList.FolderEntity
+import com.example.notepad.ui.presentation.BaseVM
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -18,10 +16,7 @@ import javax.inject.Inject
 class FolderChooseVM @Inject constructor(
     private val folderRepository: FolderRepository,
     private val noteRepository: NoteRepository
-): ViewModel(){
-
-    private val _folderEntities = MutableStateFlow<List<FolderEntity>>(emptyList())
-    val folderEntities = _folderEntities.asStateFlow()
+) : BaseVM<FolderListState, Nothing, Nothing>() {
 
     init {
         viewModelScope.launch {
@@ -32,7 +27,11 @@ class FolderChooseVM @Inject constructor(
         }
     }
 
-    private fun fillFolderList(folders: List<Folder>, notes:List<Note>) {
+    override fun createInitialState(): FolderListState = FolderListState()
+
+    override fun handleEvents(event: Nothing) = Unit
+
+    private fun fillFolderList(folders: List<Folder>, notes: List<Note>) {
         val newFolders = mutableListOf<FolderEntity>()
         newFolders.addAll(
             folders.map { folder ->
@@ -43,6 +42,6 @@ class FolderChooseVM @Inject constructor(
                 )
             }
         )
-        _folderEntities.value = newFolders
+        setState { this.copy(folderEntities = newFolders) }
     }
 }

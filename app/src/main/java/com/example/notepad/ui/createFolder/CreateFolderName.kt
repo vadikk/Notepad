@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
+import com.example.notepad.data.utils.collectWithLifecycleState
 import com.example.notepad.databinding.FolderCreateLayoutBinding
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import dagger.hilt.android.AndroidEntryPoint
@@ -28,10 +29,16 @@ class CreateFolderName : BottomSheetDialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        viewLifecycleOwner.collectWithLifecycleState(createFolderNameVM.effect){
+            when(it) {
+                is CreateFolderEffect.CloseScreen -> findNavController().popBackStack()
+            }
+        }
+
         binding?.applyBtn?.setOnClickListener {
             createFolderNameVM.createFolder(
                 binding?.folderNameEdit?.text?.toString().orEmpty().trim()
-            ) { findNavController().popBackStack() }
+            )
         }
         binding?.cancelBtn?.setOnClickListener { findNavController().navigateUp() }
     }

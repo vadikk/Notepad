@@ -36,7 +36,7 @@ class FolderListFragment : BottomSheetDialogFragment() {
 
         folderAdapter = FolderAdapter(
             { findNavController().navigate(R.id.action_folderListFragment_to_createFolderName) },
-            { folderListVM.selectFolder(it) { findNavController().popBackStack() } }
+            { folderListVM.setEvent(FoldersEvent.SelectFolder(it)) }
         )
 
         binding?.folderRV?.also {
@@ -45,8 +45,15 @@ class FolderListFragment : BottomSheetDialogFragment() {
             it.addItemDecoration(FolderItemDecoration())
         }
         binding?.cancelBtn?.setOnClickListener { findNavController().navigateUp() }
-        viewLifecycleOwner.collectWithLifecycleState(folderListVM.folderEntities) {
-            folderAdapter?.submitList(it)
+
+        viewLifecycleOwner.collectWithLifecycleState(folderListVM.viewState) {
+            folderAdapter?.submitList(it.folderEntities)
+        }
+
+        viewLifecycleOwner.collectWithLifecycleState(folderListVM.effect) {
+            when(it) {
+                is FoldersEffect.CloseScreen -> findNavController().popBackStack()
+            }
         }
     }
 

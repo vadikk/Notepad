@@ -1,4 +1,4 @@
-package com.example.notepad.data.repository
+package com.example.notepad.domain.repository
 
 import com.example.notepad.data.model.Note
 import kotlinx.coroutines.flow.Flow
