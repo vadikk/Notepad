@@ -3,12 +3,13 @@ package com.example.notepad.ui.createNote
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.example.notepad.R
-import com.example.notepad.data.model.Note
 import com.example.notepad.domain.repository.FolderRepository
 import com.example.notepad.domain.repository.NoteRepository
 import com.example.notepad.data.utils.currentTimeInSeconds
+import com.example.notepad.domain.models.Note
 import com.example.notepad.domain.usecase.DataFieldType
 import com.example.notepad.domain.usecase.ValidateNoteField
+import com.example.notepad.ui.navigation.noteUid
 import com.example.notepad.ui.presentation.BaseVM
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -22,7 +23,7 @@ class CreateNoteVM @Inject constructor(
     private val folderRepository: FolderRepository
 ) : BaseVM<CreateNoteState, NoteEvent, NoteEffect>() {
 
-    private val uid = CreateNoteFragmentArgs.fromSavedStateHandle(savedStateHandle).noteUid
+    private val uid = savedStateHandle.get<String>(noteUid).orEmpty()
 
     var currentNote: Note? = null
         private set
@@ -30,7 +31,6 @@ class CreateNoteVM @Inject constructor(
     init {
         viewModelScope.launch {
             currentNote = noteRepository.getNoteById(uid)
-            val folder = folderRepository.folderList().filter { it.isSelected }.firstOrNull()
             setState {
                 CreateNoteState(
                     title = currentNote?.title.orEmpty(),
@@ -39,7 +39,7 @@ class CreateNoteVM @Inject constructor(
                     date = currentNote?.date.orEmpty(),
                     password = currentNote?.password.orEmpty(),
                     isPinned = currentNote?.isPinned ?: false,
-                    folder = folder?.uid?.toString().orEmpty()
+                    folder = ""
                 )
             }
         }

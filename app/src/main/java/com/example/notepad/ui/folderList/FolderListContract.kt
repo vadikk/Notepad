@@ -1,17 +1,17 @@
 package com.example.notepad.ui.folderList
 
-import com.example.notepad.data.model.Folder
+import com.example.notepad.domain.models.Folder
 import com.example.notepad.ui.presentation.Effect
 import com.example.notepad.ui.presentation.Event
 import com.example.notepad.ui.presentation.State
 
 data class FoldersState(
-    val folderEntities: List<FolderEntity> = emptyList()
+    val folders: List<FolderEntityContract> = emptyList()
 ): State
 
-sealed class FolderEntity {
-    class FolderItem(val folder: Folder) : FolderEntity()
-    object FolderIdle : FolderEntity()
+sealed class FolderEntityContract {
+    class FolderItem(val folder: Folder) : FolderEntityContract()
+    object FolderIdle : FolderEntityContract()
 }
 
 sealed class FoldersEffect: Effect{

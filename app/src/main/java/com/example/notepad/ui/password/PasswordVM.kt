@@ -1,10 +1,12 @@
 package com.example.notepad.ui.password
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.notepad.domain.usecase.ValidatePassword
 import com.example.notepad.domain.usecase.ValidationResult
-import com.example.notepad.ui.view.KeyboardBtnEnum
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
@@ -17,7 +19,7 @@ class PasswordVM(
     val passwordFlow = _passwordFlow.asSharedFlow()
 
     private var originalPassword = ""
-    var passwordText = ""
+    var passwordText by mutableStateOf("")
         private set
 
     fun passOriginalPassword(password: String) {
@@ -50,4 +52,18 @@ class PasswordVM(
             )
         }
     }
+}
+
+enum class KeyboardBtnEnum(val value: Int){
+    BTN_0(0),
+    BTN_1(1),
+    BTN_2(2),
+    BTN_3(3),
+    BTN_4(4),
+    BTN_5(5),
+    BTN_6(6),
+    BTN_7(7),
+    BTN_8(8),
+    BTN_9(9),
+    BTN_CLEAR(-1)
 }

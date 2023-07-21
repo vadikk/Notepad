@@ -1,42 +1,50 @@
 package com.example.notepad.ui.mainScreen
 
-import android.util.Log
+import android.app.Activity
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.notepad.data.di.IoDispatcher
-import com.example.notepad.data.model.Folder
-import com.example.notepad.data.model.Note
+import com.example.notepad.domain.models.Folder
+import com.example.notepad.domain.models.Note
 import com.example.notepad.domain.repository.FolderRepository
 import com.example.notepad.domain.repository.NoteRepository
+import com.example.notepad.ui.MainActivity
 import com.example.notepad.ui.presentation.BaseVM
-import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
+import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import javax.inject.Inject
 
-@HiltViewModel
-class MainScreenVM @Inject constructor(
+class MainScreenVM @AssistedInject constructor(
     private val noteRepository: NoteRepository,
     private val folderRepository: FolderRepository,
-    @IoDispatcher private val dispatcher: CoroutineDispatcher
-): BaseVM<MainScreenState, MainScreenEvent, MainScreenEffect>() {
+    @IoDispatcher private val dispatcher: CoroutineDispatcher,
+    @Assisted private val typeScreen: TypeScreen
+) : BaseVM<MainScreenState, MainScreenEvent, MainScreenEffect>() {
 
     private val _notes = MutableStateFlow<List<Note>>(emptyList())
     private val _folders = MutableStateFlow<List<Folder>>(emptyList())
 
     var spanCount = 1
 
-    private var originalNotes = emptyList<Note>()
+    private var originalNoteEntities = emptyList<Note>()
     private var selectedNotes = mutableSetOf<NoteModifyState>()
 
-    fun init(typeScreen: TypeScreen) {
-        viewModelScope.launch { noteRepository.getNotes().collect{ _notes.value = it } }
+    init {
+        viewModelScope.launch { noteRepository.getNotes().collect { _notes.value = it } }
 
         if (typeScreen == TypeScreen.MAIN)
             viewModelScope.launch { folderRepository.getFolders().collect { _folders.value = it } }
 
-        _folders.combine(_notes){ folders, notes ->
+        _folders.combine(_notes) { folders, notes ->
             if (folders.isEmpty() || folders.none { it.isSelected }) {
                 setState { this.copy(folderName = "All notes") }
                 fillNoteStateList(notes)
@@ -54,7 +62,7 @@ class MainScreenVM @Inject constructor(
     override fun createInitialState(): MainScreenState = MainScreenState()
 
     override fun handleEvents(event: MainScreenEvent) {
-        when(event) {
+        when (event) {
             is MainScreenEvent.SearchNote -> searchContent(event.text)
             is MainScreenEvent.SelectNote -> selectNote(event.uid, event.isChecked)
             is MainScreenEvent.SelectAll -> selectAll(event.selectState)
@@ -74,7 +82,7 @@ class MainScreenVM @Inject constructor(
         val pinNotes = mutableSetOf<NoteModifyState>().apply { addAll(selectedNotes) }
 
         viewModelScope.launch {
-            pinNotes.forEach{
+            pinNotes.forEach {
                 noteRepository.deleteNote(it.uid.toString())
             }
         }
@@ -85,8 +93,8 @@ class MainScreenVM @Inject constructor(
         val pinNotes = mutableSetOf<NoteModifyState>().apply { addAll(selectedNotes) }
 
         viewModelScope.launch {
-            pinNotes.forEach{
-                noteRepository.pinNote(it.uid.toString(), !it.note.isPinned)
+            pinNotes.forEach {
+                noteRepository.pinNote(it.uid.toString(), !it.noteEntity.isPinned)
             }
         }
         setEffect { MainScreenEffect.CancelEdit }
@@ -114,25 +122,27 @@ class MainScreenVM @Inject constructor(
                 },
                 selectNoteCount = SelectNoteCount(
                     selectedNotes.size,
-                    selectedNotes.size == originalNotes.size
+                    selectedNotes.size == originalNoteEntities.size
                 )
             )
         }
     }
 
     private fun selectAll(selectState: NoteSelectState) {
-        val newNoteModifyState = originalNotes.map { note ->
-            NoteModifyState(uid = note.uid, note = note, selectState = selectState)
+        val newNoteModifyState = originalNoteEntities.map { note ->
+            NoteModifyState(uid = note.uid, noteEntity = note, selectState = selectState)
         }
 
         if (selectState == NoteSelectState.NOT_SELECT) clearSelectNotes()
         else {
             selectedNotes.addAll(newNoteModifyState)
             setState {
-                this.copy(selectNoteCount = SelectNoteCount(
-                    selectedNotes.size,
-                    selectedNotes.size == originalNotes.size
-                ))
+                this.copy(
+                    selectNoteCount = SelectNoteCount(
+                        selectedNotes.size,
+                        selectedNotes.size == originalNoteEntities.size
+                    )
+                )
             }
         }
         setState { this.copy(modifyNotes = newNoteModifyState) }
@@ -141,17 +151,17 @@ class MainScreenVM @Inject constructor(
     private fun fillNoteStateList(notes: List<Note>) {
         setState {
             this.copy(modifyNotes = notes.map { note ->
-                NoteModifyState(uid = note.uid, note = note, selectState = NoteSelectState.IDLE)
+                NoteModifyState(uid = note.uid, noteEntity = note, selectState = NoteSelectState.IDLE)
             })
         }
-        originalNotes = notes
+        originalNoteEntities = notes
     }
 
     private suspend fun filterNotes(text: String) {
         if (text.isEmpty()) {
             setState {
-                this.copy(modifyNotes = originalNotes.map { note ->
-                    NoteModifyState(uid = note.uid, note = note, selectState = NoteSelectState.IDLE)
+                this.copy(modifyNotes = originalNoteEntities.map { note ->
+                    NoteModifyState(uid = note.uid, noteEntity = note, selectState = NoteSelectState.IDLE)
                 })
             }
             return
@@ -159,19 +169,46 @@ class MainScreenVM @Inject constructor(
 
         val filterList = mutableListOf<Note>()
 
-        withContext(dispatcher){
-            originalNotes.forEach { note ->
+        withContext(dispatcher) {
+            originalNoteEntities.forEach { note ->
                 if (note.title.lowercase().contains(text.lowercase()) ||
-                        note.description.lowercase().contains(text.lowercase()))
+                    note.description.lowercase().contains(text.lowercase())
+                )
                     filterList.add(note)
             }
         }
 
         setState {
             this.copy(modifyNotes = filterList.map { note ->
-                NoteModifyState(uid = note.uid, note = note, selectState = NoteSelectState.IDLE)
+                NoteModifyState(uid = note.uid, noteEntity = note, selectState = NoteSelectState.IDLE)
             })
         }
     }
 
+    @AssistedFactory
+    interface Factory {
+        fun create(typeScreen: TypeScreen): MainScreenVM
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    companion object {
+        fun provideFactory(
+            assistedFactory: Factory,
+            typeScreen: TypeScreen
+        ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                return assistedFactory.create(typeScreen) as T
+            }
+        }
+    }
+}
+
+@Composable
+fun mainViewModel(typeScreen: TypeScreen): MainScreenVM {
+    val factory = EntryPointAccessors.fromActivity(
+        LocalContext.current as Activity,
+        MainActivity.ViewModelFactoryProvider::class.java
+    ).mainVMFactory()
+
+    return viewModel(factory = MainScreenVM.provideFactory(factory, typeScreen))
 }

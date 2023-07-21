@@ -4,27 +4,27 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import com.example.notepad.data.model.Folder
+import com.example.notepad.data.db.models.FolderEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface FolderDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(folder: Folder)
+    suspend fun insert(folderEntity: FolderEntity)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertAll(folder: List<Folder>)
+    suspend fun insertAll(folderEntity: List<FolderEntity>)
 
     @Query("DELETE FROM folder WHERE uid LIKE :uid")
     suspend fun deleteFolder(uid: String)
 
     @Query("SELECT * FROM folder")
-    fun getFolders(): Flow<List<Folder>>
+    fun getFolders(): Flow<List<FolderEntity>>
 
     @Query("UPDATE folder SET isSelected =:isSelected WHERE uid LIKE :uid")
     suspend fun selectFolder(uid: String, isSelected: Boolean)
 
     @Query("SELECT * FROM folder")
-    suspend fun folderList(): List<Folder>
+    suspend fun folderList(): List<FolderEntity>
 }

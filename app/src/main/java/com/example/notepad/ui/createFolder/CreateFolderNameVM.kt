@@ -1,7 +1,7 @@
 package com.example.notepad.ui.createFolder
 
 import androidx.lifecycle.viewModelScope
-import com.example.notepad.data.model.Folder
+import com.example.notepad.domain.models.Folder
 import com.example.notepad.domain.repository.FolderRepository
 import com.example.notepad.ui.presentation.BaseVM
 import dagger.hilt.android.lifecycle.HiltViewModel

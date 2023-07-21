@@ -1,6 +1,6 @@
 package com.example.notepad.domain.repository
 
-import com.example.notepad.data.model.Folder
+import com.example.notepad.domain.models.Folder
 import kotlinx.coroutines.flow.Flow
 
 interface FolderRepository {

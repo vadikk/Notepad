@@ -1,13 +1,13 @@
 package com.example.notepad.ui.folderList
 
 import androidx.lifecycle.viewModelScope
-import com.example.notepad.data.model.Folder
-import com.example.notepad.data.model.Note
+import com.example.notepad.domain.models.Folder
+import com.example.notepad.domain.models.Note
 import com.example.notepad.domain.repository.FolderRepository
 import com.example.notepad.domain.repository.NoteRepository
 import com.example.notepad.ui.presentation.BaseVM
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -21,10 +21,11 @@ class FolderListVM @Inject constructor(
 
     init {
         viewModelScope.launch {
-            val notes = async { noteRepository.notes() }.await()
-            folderRepository.getFolders().collect {
-                folderList = it
-                fillFolderList(it, notes)
+            noteRepository.getNotes().collectLatest { notes ->
+                folderRepository.getFolders().collectLatest { folders ->
+                    folderList = folders
+                    fillFolderList(folders, notes)
+                }
             }
         }
     }
@@ -48,31 +49,31 @@ class FolderListVM @Inject constructor(
         setEffect { FoldersEffect.CloseScreen }
     }
 
-    private fun fillFolderList(folders: List<Folder>, notes: List<Note>) {
-        val isSelectAllNotes = folders.none { it.isSelected }
+    private fun fillFolderList(folderEntities: List<Folder>, noteEntities: List<Note>) {
+        val isSelectAllNotes = folderEntities.none { it.isSelected }
 
-        val newFolders = mutableListOf<FolderEntity>().apply {
-            add(FolderEntity.FolderIdle)
+        val newFolders = mutableListOf<FolderEntityContract>().apply {
+            add(FolderEntityContract.FolderIdle)
             add(
-                FolderEntity.FolderItem(
+                FolderEntityContract.FolderItem(
                     Folder(
                         uid = -1,
                         title = "All notes",
                         isSelected = isSelectAllNotes,
-                        countNote = notes.size
+                        countNote = noteEntities.size
                     )
                 )
             )
         }
         newFolders.addAll(
-            folders.map { folder ->
-                FolderEntity.FolderItem(
+            folderEntities.map { folder ->
+                FolderEntityContract.FolderItem(
                     folder.copy(
-                        countNote = notes.filter { it.folder == folder.uid.toString() }.size
+                        countNote = noteEntities.filter { it.folder == folder.uid.toString() }.size
                     )
                 )
             }
         )
-        setState { this.copy(folderEntities = newFolders) }
+        setState { this.copy(folders = newFolders) }
     }
 }

@@ -1,6 +1,6 @@
 package com.example.notepad.domain.repository
 
-import com.example.notepad.data.model.Note
+import com.example.notepad.domain.models.Note
 import kotlinx.coroutines.flow.Flow
 
 interface NoteRepository {
